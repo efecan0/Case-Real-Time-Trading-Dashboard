@@ -1,0 +1,13 @@
+{
+  "name": "bull-trading",
+  "version": "1.0.0",
+  "dependencies": [
+    "catch2",
+    "nlohmann-json",
+    "uwebsockets",
+    "msgpack",
+    "jwt-cpp",
+    "cpr",
+    "clickhouse-cpp"
+  ]
+}
