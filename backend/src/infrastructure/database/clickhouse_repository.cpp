@@ -550,21 +550,49 @@ bool ClickHouseHistoryRepository::generateMockData() {
         };
 
         auto now = std::chrono::system_clock::now();
-        auto startTime = now - std::chrono::hours(24 * 7); // 7 days ago
+        auto startTime = now - std::chrono::hours(24 * 2); // 2 days ago (much shorter)
 
         // Using HTTP mode for mock data generation
         std::cout << "[MockData] Using HTTP mode for mock data generation" << std::endl;
 
-        // Check if data already exists
-        auto checkResponse = cpr::Post(
+        // Check if data already exists in both ticks and candles_1m tables
+        std::cout << "[MockData] Checking if data already exists..." << std::endl;
+        
+        // Check ticks table
+        auto ticksCheckResponse = cpr::Post(
             cpr::Url{"http://" + host_ + ":" + std::to_string(port_)},
-            cpr::Body{"SELECT COUNT(*) as count FROM " + database_ + ".ticks LIMIT 1"}
+            cpr::Body{"SELECT COUNT(*) FROM " + database_ + ".ticks"}
         );
         
-        if (checkResponse.status_code == 200 && checkResponse.text.find("\"count\":\"0\"") == std::string::npos) {
-            std::cout << "[MockData] Data already exists, skipping generation" << std::endl;
+        // Check candles_1m table (frontend uses this)
+        auto candlesCheckResponse = cpr::Post(
+            cpr::Url{"http://" + host_ + ":" + std::to_string(port_)},
+            cpr::Body{"SELECT COUNT(*) FROM " + database_ + ".candles_1m"}
+        );
+        
+        std::cout << "[MockData] Ticks check response status: " << ticksCheckResponse.status_code << ", text: '" << ticksCheckResponse.text << "'" << std::endl;
+        std::cout << "[MockData] Candles check response status: " << candlesCheckResponse.status_code << ", text: '" << candlesCheckResponse.text << "'" << std::endl;
+        
+        // Trim whitespace and newlines from responses
+        std::string trimmedTicksResponse = ticksCheckResponse.text;
+        trimmedTicksResponse.erase(trimmedTicksResponse.find_last_not_of(" \t\r\n") + 1);
+        trimmedTicksResponse.erase(0, trimmedTicksResponse.find_first_not_of(" \t\r\n"));
+        
+        std::string trimmedCandlesResponse = candlesCheckResponse.text;
+        trimmedCandlesResponse.erase(trimmedCandlesResponse.find_last_not_of(" \t\r\n") + 1);
+        trimmedCandlesResponse.erase(0, trimmedCandlesResponse.find_first_not_of(" \t\r\n"));
+        
+        std::cout << "[MockData] Trimmed ticks response: '" << trimmedTicksResponse << "'" << std::endl;
+        std::cout << "[MockData] Trimmed candles response: '" << trimmedCandlesResponse << "'" << std::endl;
+        
+        // If both tables have data, skip generation
+        if (ticksCheckResponse.status_code == 200 && candlesCheckResponse.status_code == 200 && 
+            trimmedTicksResponse != "0" && trimmedCandlesResponse != "0") {
+            std::cout << "[MockData] Data already exists in both tables, skipping generation." << std::endl;
             return true;
         }
+        
+        std::cout << "[MockData] No existing data found, proceeding with generation..." << std::endl;
 
         // Generate mock ticks data for each symbol
         std::cout << "[MockData] Generating mock ticks data..." << std::endl;
@@ -572,9 +600,9 @@ bool ClickHouseHistoryRepository::generateMockData() {
             double basePrice = basePrices[symbol];
             auto currentTime = startTime;
             
-            // Generate 1000 ticks per day for 7 days = 7000 ticks per symbol
-            for (int day = 0; day < 7; day++) {
-                for (int tick = 0; tick < 1000; tick++) {
+            // Generate 100 ticks per day for 2 days = 200 ticks per symbol (much shorter)
+            for (int day = 0; day < 2; day++) {
+                for (int tick = 0; tick < 100; tick++) {
                     // Random price movement (-2% to +2%)
                     double priceChange = (priceDist(gen) - 0.5) * 0.04; // -2% to +2%
                     basePrice *= (1.0 + priceChange);
@@ -587,12 +615,16 @@ bool ClickHouseHistoryRepository::generateMockData() {
                     double last = basePrice;
                     int volume = tickVolumeDist(gen);
                     
-                    // Insert tick data
+                    // Insert tick data - convert timestamp to proper ClickHouse DateTime format
+                    auto time_t_val = std::chrono::system_clock::to_time_t(currentTime);
+                    struct tm* tm_info = std::gmtime(&time_t_val);
+                    char timestamp_str[32];
+                    std::strftime(timestamp_str, sizeof(timestamp_str), "%Y-%m-%d %H:%M:%S", tm_info);
+                    
                     std::stringstream insertSql;
                     insertSql << "INSERT INTO " << database_ << ".ticks VALUES ('" 
-                              << symbol << "', '" 
-                              << std::chrono::duration_cast<std::chrono::seconds>(currentTime.time_since_epoch()).count()
-                              << "', " << bid << ", " << ask << ", " << last << ", " << volume << ")";
+                              << symbol << "', '" << timestamp_str << "', " 
+                              << bid << ", " << ask << ", " << last << ", " << volume << ")";
                     
                     auto insertResponse = cpr::Post(
                         cpr::Url{"http://" + host_ + ":" + std::to_string(port_)},
@@ -600,7 +632,10 @@ bool ClickHouseHistoryRepository::generateMockData() {
                     );
                     
                     if (insertResponse.status_code != 200) {
-                        std::cout << "[MockData] Failed to insert tick for " << symbol << std::endl;
+                        std::cout << "[MockData] Failed to insert tick for " << symbol 
+                                  << " (status: " << insertResponse.status_code 
+                                  << ", response: " << insertResponse.text << ")" << std::endl;
+                        std::cout << "[MockData] Failed SQL: " << insertSql.str() << std::endl;
                     }
                     
                     // Advance time by random interval (30-300 seconds)
@@ -613,7 +648,7 @@ bool ClickHouseHistoryRepository::generateMockData() {
         std::cout << "[MockData] Generating mock orders_log data..." << std::endl;
         std::vector<std::string> orderStatuses = {"FILLED", "PENDING", "CANCELLED"};
         
-        for (int i = 0; i < 50; i++) { // 50 sample orders
+        for (int i = 0; i < 10; i++) { // 10 sample orders (much shorter)
             std::string orderId = "ORD_" + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() + i);
             std::string idempKey = "idemp_" + std::to_string(i);
             std::string status = orderStatuses[i % 3];
@@ -630,11 +665,17 @@ bool ClickHouseHistoryRepository::generateMockData() {
                 {"type", "LIMIT"}
             };
             
+            // Convert timestamp to proper ClickHouse DateTime format
+            auto order_time = now - std::chrono::hours(i);
+            auto time_t_val = std::chrono::system_clock::to_time_t(order_time);
+            struct tm* tm_info = std::gmtime(&time_t_val);
+            char timestamp_str[32];
+            std::strftime(timestamp_str, sizeof(timestamp_str), "%Y-%m-%d %H:%M:%S", tm_info);
+            
             std::stringstream insertSql;
             insertSql << "INSERT INTO " << database_ << ".orders_log VALUES ('"
-                      << idempKey << "', '"
-                      << std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count() - (i * 3600)
-                      << "', '" << status << "', '" << orderId << "', '" << result.dump() << "')";
+                      << idempKey << "', '" << timestamp_str << "', '"
+                      << status << "', '" << orderId << "', '" << result.dump() << "')";
             
             auto insertResponse = cpr::Post(
                 cpr::Url{"http://" + host_ + ":" + std::to_string(port_)},
@@ -643,6 +684,64 @@ bool ClickHouseHistoryRepository::generateMockData() {
             
             if (insertResponse.status_code == 200) {
                 std::cout << "[MockData] Inserted order " << orderId << " for " << symbol << std::endl;
+            } else {
+                std::cout << "[MockData] Failed to insert order " << orderId 
+                          << " (status: " << insertResponse.status_code 
+                          << ", response: " << insertResponse.text << ")" << std::endl;
+                std::cout << "[MockData] Failed SQL: " << insertSql.str() << std::endl;
+            }
+        }
+
+        // Generate mock candles_1m data for frontend chart
+        std::cout << "[MockData] Generating mock candles_1m data..." << std::endl;
+        for (const auto& symbol : symbols) {
+            double basePrice = basePrices[symbol];
+            auto currentTime = startTime;
+            
+            // Generate 15-minute candles for 2 days = 2 * 24 * 4 = 192 candles per symbol (much shorter)
+            for (int day = 0; day < 2; day++) {
+                for (int hour = 0; hour < 24; hour++) {
+                    for (int quarter = 0; quarter < 4; quarter++) {
+                        // Random price movement (-1% to +1%) for each candle
+                        double priceChange = (priceDist(gen) - 0.5) * 0.02;
+                        basePrice *= (1.0 + priceChange);
+                        
+                        // Ensure price doesn't go negative
+                        if (basePrice <= 0.01) basePrice = basePrices[symbol] * 0.5;
+                        
+                        // Generate OHLC for the candle
+                        double open = basePrice;
+                        double close = basePrice * (1.0 + (priceDist(gen) - 0.5) * 0.01);
+                        double high = (open > close ? open : close) * (1.0 + priceDist(gen) * 0.005);
+                        double low = (open < close ? open : close) * (1.0 - priceDist(gen) * 0.005);
+                        int volume = volumeDist(gen);
+                        
+                        // Convert timestamp to proper ClickHouse DateTime format
+                        auto time_t_val = std::chrono::system_clock::to_time_t(currentTime);
+                        struct tm* tm_info = std::gmtime(&time_t_val);
+                        char timestamp_str[32];
+                        std::strftime(timestamp_str, sizeof(timestamp_str), "%Y-%m-%d %H:%M:%S", tm_info);
+                        
+                        std::stringstream insertSql;
+                        insertSql << "INSERT INTO " << database_ << ".candles_1m VALUES ('"
+                                  << symbol << "', '" << timestamp_str << "', "
+                                  << open << ", " << high << ", " << low << ", " << close << ", " << volume << ")";
+                        
+                        auto insertResponse = cpr::Post(
+                            cpr::Url{"http://" + host_ + ":" + std::to_string(port_)},
+                            cpr::Body{insertSql.str()}
+                        );
+                        
+                        if (insertResponse.status_code != 200) {
+                            std::cout << "[MockData] Failed to insert candle for " << symbol 
+                                      << " (status: " << insertResponse.status_code 
+                                      << ", response: " << insertResponse.text << ")" << std::endl;
+                        }
+                        
+                        // Advance by 15 minutes
+                        currentTime += std::chrono::minutes(15);
+                    }
+                }
             }
         }
 

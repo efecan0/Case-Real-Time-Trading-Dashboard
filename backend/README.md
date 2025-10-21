@@ -122,7 +122,7 @@ docker --version       # For ClickHouse setup
 #### Step 1: Clone and Initialize
 ```bash
 # Clone the repository with all submodules
-git clone <repository-url> trade-bull-backend
+git clone https://github.com/efecan0/Case-Real-Time-Trading-Dashboard trade-bull-backend
 cd trade-bull-backend
 
 # Initialize and update all submodules (this downloads BinaryRPC framework)
@@ -148,13 +148,25 @@ cd ../..
 **⏱️ Expected time: 1-2 minutes**
 
 #### Step 3: Configure and Build
+
+**For Linux/macOS:**
 ```bash
 # Use CMake presets for easy configuration
-cmake --preset=default
+cmake --preset=development
 
 # Build the project (this downloads and compiles all dependencies)
-cmake --build --preset=default
+cmake --build --preset=build-development
 ```
+
+**For Windows:**
+```bash
+# Use Windows-specific CMake presets with Visual Studio generator
+cmake --preset=development-windows
+
+# Build the project using MSBuild
+cmake --build --preset=build-development-windows
+```
+
 **⏱️ Expected time: 3-5 minutes (depends on your machine)**
 
 > **💡 Tip**: The first build takes longer as vcpkg downloads and compiles dependencies like ClickHouse client, nlohmann-json, etc.
@@ -169,17 +181,30 @@ docker-compose up -d clickhouse
 
 # Verify ClickHouse is running
 curl 'http://localhost:8123/' --data-binary 'SELECT 1'
+# On Windows PowerShell, use:
+# Invoke-WebRequest -Uri 'http://localhost:8123/' -Method POST -Body 'SELECT 1'
 # Should return: 1
 ```
 **⏱️ Expected time: 30 seconds**
 
 #### Step 5: Launch the Trading Server! 🚀
+
+**For Linux/macOS:**
 ```bash
 # Navigate to build directory
 cd build/RelWithDebInfo    # or Debug if you built in Debug mode
 
 # Start the server
 ./bull-trading
+```
+
+**For Windows:**
+```bash
+# Navigate to Windows build directory
+cd cmake-build-vs\RelWithDebInfo
+
+# Start the server
+.\bull-trading.exe
 ```
 
 **🎉 Success Output:**
@@ -223,11 +248,21 @@ ctest --output-on-failure --verbose
 ### 🔧 Troubleshooting Common Issues
 
 #### **Build Fails:**
+
+**For Linux/macOS:**
 ```bash
 # Clean and retry
 rm -rf build/
-cmake --preset=default
-cmake --build --preset=default
+cmake --preset=development
+cmake --build --preset=build-development
+```
+
+**For Windows:**
+```bash
+# Clean and retry - remove Windows build directory
+rmdir /s cmake-build-vs
+cmake --preset=development-windows
+cmake --build --preset=build-development-windows
 ```
 
 #### **ClickHouse Connection Issues:**
@@ -300,6 +335,8 @@ export CLICKHOUSE_DATABASE=trading_db
 ## 📚 Advanced Build Options
 
 ### Manual CMake Configuration (Alternative to presets)
+
+**For Linux/macOS:**
 ```bash
 mkdir build && cd build
 cmake .. \
@@ -308,16 +345,28 @@ cmake .. \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo
 ```
 
+**For Windows:**
+```bash
+mkdir cmake-build-vs && cd cmake-build-vs
+cmake .. \
+  -DCMAKE_TOOLCHAIN_FILE=../third_party/vcpkg/scripts/buildsystems/vcpkg.cmake \
+  -DVCPKG_TARGET_TRIPLET=x64-windows \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -G "Visual Studio 17 2022" \
+  -A x64
+```
+
 ### Cross-Platform Build Commands
 ```bash
 # Linux/macOS
 make -j$(nproc)
 
-# Windows (MSVC)
-cmake --build . --config RelWithDebInfo --parallel
+# Windows (MSVC) - Use presets instead
+cmake --build --preset=build-development-windows
 
-# Cross-platform
-cmake --build . --config RelWithDebInfo --parallel
+# Cross-platform (with presets)
+cmake --build --preset=build-development        # Linux/macOS
+cmake --build --preset=build-development-windows # Windows
 ```
 
 ## 📊 Real-Time Data Handling
