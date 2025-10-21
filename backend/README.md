@@ -107,7 +107,7 @@ Before starting, ensure you have these installed:
 - ✅ **C++20 Compiler**: GCC 10+, Clang 12+, or MSVC 2019+
 - ✅ **CMake**: Version 3.16 or higher  
 - ✅ **Git**: For submodule management
-- ✅ **Docker**: For ClickHouse (optional but recommended)
+- ✅ **Docker**: For ClickHouse
 
 **Check your versions:**
 ```bash
@@ -316,14 +316,6 @@ Once the server starts, you should see:
    ```
 
 ### 🎛️ Configuration Options
-
-**Environment Variables** (set before running server):
-```bash
-export CLICKHOUSE_HOST=localhost
-export CLICKHOUSE_PORT=9000
-export CLICKHOUSE_HTTP_PORT=8123
-export CLICKHOUSE_DATABASE=trading_db
-```
 
 **Server Configuration** (edit in source if needed):
 - **Port**: `8082` (default)
@@ -663,7 +655,6 @@ std::queue<OrderLogData> log_queue_;
 - **Session Management**: Secure session handling with automatic cleanup
 
 ### Data Protection
-- **TLS/WSS**: Encrypted communication (configurable)
 - **Input Validation**: Comprehensive request validation and sanitization
 - **Rate Limiting**: Prevents abuse and DoS attacks
 
@@ -678,19 +669,11 @@ std::queue<OrderLogData> log_queue_;
 
 ### Technical Challenges
 
-**1. Low-Latency Requirements**
-- **Challenge**: Microsecond-level response times for order placement
-- **Solution**: Compiled C++, binary protocol, lock-free programming, CPU affinity
-
-**2. High-Frequency Data Processing**
+**1. High-Frequency Data Processing**
 - **Challenge**: Processing thousands of market ticks per second
 - **Solution**: Async processing, connection pooling, batch operations
 
-**3. System Reliability**
-- **Challenge**: Zero downtime during market hours
-- **Solution**: Health checks, automatic failover, graceful shutdown
-
-**4. Data Consistency**
+**2. Data Consistency**
 - **Challenge**: Ensuring order consistency across system restarts
 - **Solution**: Idempotency keys, persistent logging, state recovery
 
@@ -703,5 +686,4 @@ std::queue<OrderLogData> log_queue_;
 
 **Vertical Scaling:**
 - Multi-threaded processing with thread-safe operations
-- Memory-mapped files for large dataset access
-- CPU optimization with vectorized operations
+- Background writer threads for database operations
