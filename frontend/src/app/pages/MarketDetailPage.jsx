@@ -11,7 +11,7 @@ export default function MarketDetailPage() {
   const { prices } = usePrices();
   const { connected, subscribeToSymbol, marketData, queryHistory, historyData } = useWebSocket();
 
-  // Sayfa mount olduğunda sadece bu symbol'e subscribe ol ve history çek
+  // Subscribe only to this symbol when page mounts and fetch history
   useEffect(() => {
     if (symbol && connected && subscribeToSymbol) {
       console.log(`🎯 MarketDetailPage: Subscribing to ${symbol} only`);
@@ -19,26 +19,26 @@ export default function MarketDetailPage() {
     }
   }, [symbol, connected, subscribeToSymbol]);
 
-  // Symbol değiştiğinde history çek
+  // Fetch history when symbol changes
   useEffect(() => {
     if (symbol && connected && queryHistory) {
       console.log(`📊 Fetching 1-year history for ${symbol}...`);
       
-      // 1 yıllık history çek (H1 interval - 1 saatlik mumlar)
+      // Fetch 1 year history (H1 interval - 1 hour candles)
       const now = Date.now();
-      const yearAgo = now - (365 * 24 * 60 * 60 * 1000); // 365 gün öncesi
+      const yearAgo = now - (365 * 24 * 60 * 60 * 1000); // 365 days ago
 
       queryHistory(
         symbol,
         yearAgo,
         now,
-        'H1', // 1 saatlik mumlar
-        8760  // 365*24 = 8760 saat
+        'H1', // 1 hour candles
+        8760  // 365*24 = 8760 hours
       );
     }
   }, [symbol, connected, queryHistory]);
 
-  // Debug: History data'yı logla
+  // Debug: Log history data
   useEffect(() => {
     if (historyData && symbol) {
       console.log(`📈 History data for ${symbol}:`, historyData);
@@ -48,7 +48,7 @@ export default function MarketDetailPage() {
     }
   }, [historyData, symbol]);
 
-  // Debug: WebSocket market data ve price'ı logla
+  // Debug: Log WebSocket market data and price
   const [previousPrice, setPreviousPrice] = useState(null);
   useEffect(() => {
     if (marketData?.[symbol]) {

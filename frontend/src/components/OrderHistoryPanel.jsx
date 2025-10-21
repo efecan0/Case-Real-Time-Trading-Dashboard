@@ -20,18 +20,18 @@ export default function OrderHistoryPanel({
   useEffect(() => {
     if (connected && getOrderHistory) {
       setLoading(true);
-      getOrderHistory(); // Tüm order history'yi çek
+      getOrderHistory(); // Fetch all order history
     }
   }, [connected, getOrderHistory]);
 
-  // Loading state'i allOrderHistory yüklendiğinde güncelle
+  // Update loading state when allOrderHistory is loaded
   useEffect(() => {
     if (allOrderHistory.length > 0) {
       setLoading(false);
     }
   }, [allOrderHistory]);
 
-  // Transform order history ve mevcut sayfa için verileri hesapla
+  // Transform order history and calculate data for current page
   const transformedAllOrders = useMemo(() => {
     if (allOrderHistory && allOrderHistory.length > 0) {
       return allOrderHistory.map(histOrder => {
@@ -95,7 +95,7 @@ export default function OrderHistoryPanel({
     return [];
   }, [allOrderHistory, wsOrders, orders]);
 
-  // Mevcut sayfa için order'ları hesapla
+  // Calculate orders for current page
   const rows = useMemo(() => {
     const { currentPage, pageSize } = orderHistoryMeta;
     const startIndex = (currentPage - 1) * pageSize;
@@ -121,7 +121,7 @@ export default function OrderHistoryPanel({
     if (Number.isNaN(date.getTime())) return "-";
     
     if (isCompact) {
-      // Kompakt mod için sadece saat:dakika göster
+      // For compact mode show only hour:minute
       return date.toLocaleTimeString("tr-TR", {
         hour: "2-digit",
         minute: "2-digit",
@@ -156,11 +156,11 @@ export default function OrderHistoryPanel({
 
   const handlePageChange = (newPage) => {
     if (loadOrderHistoryPage) {
-      loadOrderHistoryPage(newPage); // Frontend'de sayfa değiştir, loading yok
+      loadOrderHistoryPage(newPage); // Change page in frontend, no loading
     }
   };
 
-  // Pagination bilgilerini hesapla
+  // Calculate pagination info
   const paginationInfo = useMemo(() => {
     const source = symbol ? transformedAllOrders.filter((o) => o.symbol === symbol) : transformedAllOrders;
     const { currentPage, pageSize } = orderHistoryMeta;
@@ -179,7 +179,7 @@ export default function OrderHistoryPanel({
     };
   }, [transformedAllOrders, symbol, orderHistoryMeta]);
 
-  // Ana ekran için kompakt mod
+  // Compact mode for main screen
   const isCompact = typeof maxItems === "number" && maxItems <= 10;
   
   return (

@@ -82,30 +82,30 @@ export default function MarketDataPanel({ onSelectSymbol, onPriceUpdate }) {
   }, [marketData, setPrice]); // Remove onPriceUpdate from dependencies to prevent loops
 
   const handleGrafikClick = (symbol, e) => {
-    e.preventDefault(); // Sayfa yönlendirmesini engelle
-    e.stopPropagation(); // Row click'i engelle
+    e.preventDefault(); // Prevent page navigation
+    e.stopPropagation(); // Prevent row click
     
     console.log(`🎯 Chart clicked for ${symbol}, sending subscribe request for this symbol only...`);
     console.log(`📤 CLIENT SENDING: subscribeToSymbol with symbol:`, symbol);
     
-    // Sadece bu symbol'e subscribe ol (server cleanup yapacak)
+    // Subscribe only to this symbol (server will cleanup)
     if (connected && subscribeToSymbol) {
       console.log(`🔄 Calling subscribeToSymbol for ${symbol}`);
       subscribeToSymbol(symbol);
       console.log(`📊 Sent subscribe request for ${symbol} only`);
       
-      // Subscribe işleminin tamamlanması için kısa bir bekleme
+      // Short wait for subscribe operation to complete
       setTimeout(() => {
         console.log(`🚀 Navigating to /market/${symbol} after subscribe`);
         navigate(`/market/${symbol}`);
       }, 100);
     } else {
       console.error(`❌ Cannot send subscribe: connected=${connected}, subscribeToSymbol=${!!subscribeToSymbol}`);
-      // Hata durumunda da navigate et
+      // Navigate even in error case
       navigate(`/market/${symbol}`);
     }
     
-    // Symbol seç
+    // Select symbol
     if (onSelectSymbol) {
       onSelectSymbol(symbol);
     }

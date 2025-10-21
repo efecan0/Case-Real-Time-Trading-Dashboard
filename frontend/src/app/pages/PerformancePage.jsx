@@ -6,7 +6,7 @@ export default function PerformancePage() {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
-    // Mock performans verileri (backend entegresi geldiğinde buradan çekilecek)
+    // Mock performance data (will be fetched from here when backend integration comes)
     const mockStats = {
       totalTrades: 128,
       profitableTrades: 87,

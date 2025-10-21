@@ -2,7 +2,7 @@ import msgpack from 'msgpack-lite';
 
 class TradingWebSocketClient {
   constructor() {
-    // Singleton pattern - tek instance kullan
+    // Singleton pattern - use single instance
     if (TradingWebSocketClient.instance) {
       console.log('🔄 Returning existing WebSocket instance');
       return TradingWebSocketClient.instance;
@@ -40,7 +40,7 @@ class TradingWebSocketClient {
     // Check for existing session token
     this.loadSessionToken();
     
-    // Sadece yeni instance için connect et
+    // Connect only for new instance
     this.connect();
   }
 
@@ -219,7 +219,7 @@ class TradingWebSocketClient {
     // Log incoming method to track orders.history
     console.log('📨 Received method:', message.method);
     
-    // Dokümandaki formata göre: {method, payload}
+    // According to document format: {method, payload}
     if (message.method && message.payload) {
       let payload = message.payload;
       
@@ -235,14 +235,14 @@ class TradingWebSocketClient {
       // Parse payload if it's Uint8Array (MsgPack encoded)
       if (payload instanceof Uint8Array) {
         try {
-          // İlk önce string olarak decode et (daha güvenilir)
+          // First try to decode as string (more reliable)
           const payloadString = new TextDecoder().decode(payload);
           
-          // JSON parse et
+          // Parse JSON
           try {
             payload = JSON.parse(payloadString);
           } catch (jsonError) {
-            // JSON başarısız olursa MsgPack dene
+            // If JSON fails, try MsgPack
             try {
               payload = msgpack.decode(payload);
             } catch (msgpackError) {
@@ -250,7 +250,7 @@ class TradingWebSocketClient {
             }
           }
         } catch (stringError) {
-          // Son çare olarak MsgPack dene
+          // Last resort: try MsgPack
           try {
             payload = msgpack.decode(payload);
           } catch (msgpackError) {
@@ -426,7 +426,7 @@ class TradingWebSocketClient {
   }
 
   sendHello() {
-    // sendRpc metodunu kullan - o zaten params'ı encode ediyor
+    // Use sendRpc method - it already encodes params
     this.sendRpc('hello', {
       token: this.token,
       clientId: this.clientId,
@@ -577,18 +577,18 @@ class TradingWebSocketClient {
           
           rooms.forEach(room => this.subscribedRooms.add(room));
           
-          // subscribedSymbols Set'ini güncelle
-          this.subscribedSymbols.clear(); // Önceki subscription'ları temizle
+          // Update subscribedSymbols Set
+          this.subscribedSymbols.clear(); // Clear previous subscriptions
           
           if (Array.isArray(subscribed)) {
             subscribed.forEach((symbolOrArray) => {
-              // Eğer nested array ise (örn: [["BTC-USD"]]), iç array'i al
+              // If nested array (e.g.: [["BTC-USD"]]), take inner array
               if (Array.isArray(symbolOrArray)) {
                 symbolOrArray.forEach(symbol => {
                   this.subscribedSymbols.add(symbol);
                 });
               } else {
-                // Direkt symbol ise (örn: ["BTC-USD"])
+                // If direct symbol (e.g.: ["BTC-USD"])
                 this.subscribedSymbols.add(symbolOrArray);
               }
             });
@@ -641,7 +641,7 @@ class TradingWebSocketClient {
   handleBroadcast(message) {
     switch (message.method) {
       case 'market_data':
-        // Sadece subscribe olunan symbol'lerin datasını kabul et
+        // Only accept data for subscribed symbols
         if (message.data && message.data.symbol) {
           const symbol = message.data.symbol;
           const isSubscribed = this.subscribedSymbols.has(symbol);
@@ -693,10 +693,10 @@ class TradingWebSocketClient {
         this.messageId = 1;
       }
       
-      // Dokümandaki formata göre: method, payload, id
+      // According to document format: method, payload, id
       const message = {
         method: method,
-        payload: payload,  // Direkt object, encode edilmiş değil
+        payload: payload,  // Direct object, not encoded
         id: currentMessageId     // Use incremental message ID for QoS1
       };
       
@@ -935,7 +935,7 @@ class TradingWebSocketClient {
   }
 }
 
-// Singleton instance export et
+// Export singleton instance
 let wsInstance = null;
 
 export const getWebSocketInstance = () => {

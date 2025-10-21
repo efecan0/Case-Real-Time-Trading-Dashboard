@@ -66,6 +66,12 @@ The following diagrams illustrate the system architecture and design:
 ![Lifecycle Diagram](images/10-lifecycle-diagram.png)
 *Boundary Conditions (Lifecycle & Alerts)*
 
+**Note**: The following lifecycle features from the UML diagram are not yet implemented:
+- **Port Binding Validation**: `if (Bind OK?)` check and FATAL log & exit on failure
+- **Graceful Shutdown Notifications**: `SERVER_SHUTTING_DOWN` client notification missing
+- **Queue Flushing**: Explicit queue flushing mechanism during shutdown is not implemented
+- **Client Notification**: No notification to clients about server shutdown state
+
 #### 9. Service Interfaces
 ![Service Interfaces](images/11-service-interfaces.png)
 *Subsystem Services (Interfaces)*

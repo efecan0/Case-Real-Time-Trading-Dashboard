@@ -112,7 +112,7 @@ bool AdvancedTradingServer::initialize() {
                 
                 std::string raw = userId + ":" + deviceId + ":" + std::to_string(now_ms) + ":" + jwtSecret_;
                 
-                // SHA-256 hash oluştur (like in the company chat server)
+                // Create SHA-256 hash
                 unsigned char hash[SHA256_DIGEST_LENGTH];
                 SHA256_CTX sha256;
                 SHA256_Init(&sha256);
@@ -738,8 +738,8 @@ void AdvancedTradingServer::handleHello(const std::vector<uint8_t>& data, binary
             {"sessionId", context.session().id()},
             {"userId", principal.subject},
             {"roles", principal.roles},
-            {"token", sessionToken},  // ← Session token eklendi
-            {"sessionExpiryMs", sessionExpiryMs},  // ← Session bitiş süresi eklendi
+            {"token", sessionToken},  // Session token added
+            {"sessionExpiryMs", sessionExpiryMs},  // Session expiry time added
             {"message", "Welcome to Advanced Bull Trading Server!"},
             {"features", {
                 {"qos", "AtLeastOnce for orders"},
@@ -1091,7 +1091,7 @@ void AdvancedTradingServer::handleOrdersPlace(const std::vector<uint8_t>& data, 
                         jsonStr = "{\"error\":\"json_dump_failed\"}";
                     }
                     
-                    // Try ClickHouse logging - isConnected kontrolü kaldırıldı
+                    // Try ClickHouse logging - isConnected check removed
                     try {
                         bool logResult = clickhouseRepo->logOrder(idempotencyKey, statusStr, orderId, jsonStr);
                         std::cout << "[Handler] logOrder result: " << (logResult ? "SUCCESS" : "FAILED") << std::endl;

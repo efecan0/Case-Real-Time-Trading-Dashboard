@@ -7,7 +7,7 @@
 #include <msgpack.hpp>
 #include <nlohmann/json.hpp>
 
-// MsgPack operatörlerinin tanımları
+// MsgPack operator definitions
 namespace msgpack {
     MSGPACK_API_VERSION_NAMESPACE(v1) {
         template <typename Stream>
@@ -24,15 +24,15 @@ namespace msgpack {
             return o;
         }
 
-        // Sabit uzunluklu karakter dizileri için özel tanımlamalar
+        // Special definitions for fixed-length character arrays
         template <typename Stream, size_t N>
         inline packer<Stream>& operator<<(packer<Stream>& o, const char (&v)[N]) {
-            o.pack_str(N-1);  // N-1 çünkü son karakter null terminator
+            o.pack_str(N-1);  // N-1 because last character is null terminator
             o.pack_str_body(v, N-1);
             return o;
         }
 
-        // object sınıfı için özel tanımlamalar
+        // Special definitions for object class
         template <size_t N>
         inline void operator<<(object& o, const char (&v)[N]) {
             o.type = type::STR;
@@ -56,15 +56,15 @@ namespace msgpack {
             return o;
         }
 
-        // Sabit uzunluklu karakter dizileri için özel tanımlamalar
+        // Special definitions for fixed-length character arrays
         template <typename Stream, size_t N>
         inline packer<Stream>& operator<<(packer<Stream>& o, const char (&v)[N]) {
-            o.pack_str(N-1);  // N-1 çünkü son karakter null terminator
+            o.pack_str(N-1);  // N-1 because last character is null terminator
             o.pack_str_body(v, N-1);
             return o;
         }
 
-        // object sınıfı için özel tanımlamalar
+        // Special definitions for object class
         template <size_t N>
         inline void operator<<(object& o, const char (&v)[N]) {
             o.type = type::STR;
@@ -74,7 +74,7 @@ namespace msgpack {
     }
 }
 
-// Recursive olarak MsgPack objesini JSON'a dönüştüren yardımcı fonksiyon
+// Helper function to recursively convert MsgPack object to JSON
 inline nlohmann::json convertMsgPackToJson(const msgpack::object& obj) {
     switch (obj.type) {
         case msgpack::type::STR: {
@@ -120,19 +120,19 @@ inline nlohmann::json convertMsgPackToJson(const msgpack::object& obj) {
     }
  }
 
-// MsgPack payload'ı map olarak parse eden yardımcı fonksiyon
+// Helper function to parse MsgPack payload as map
 inline nlohmann::json parseMsgPackPayload(const std::vector<uint8_t>& req) {
     try {
-        // Önce msgpack'i parse et
+        // First parse msgpack
         msgpack::object_handle oh = msgpack::unpack(
             reinterpret_cast<const char*>(req.data()),
             req.size()
         );
         
-        // Objeyi al
+        // Get object
         msgpack::object obj = oh.get();
         
-        // Recursive olarak objeyi JSON'a dönüştür
+        // Recursively convert object to JSON
         return convertMsgPackToJson(obj);
     }
     catch (const std::exception& ex) {

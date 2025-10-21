@@ -7,7 +7,7 @@ export default function HomePage() {
   const [selectedSymbol, setSelectedSymbol] = useState("BTC-USD");
   const { queryHistory, connected, subscribeToAllMarkets } = useWebSocket();
 
-  // Ana sayfa mount olduğunda tüm market'lere subscribe ol
+  // Subscribe to all markets when main page mounts
   useEffect(() => {
     if (connected && subscribeToAllMarkets) {
       console.log('🏠 Main page: Subscribing to all markets');
@@ -15,21 +15,21 @@ export default function HomePage() {
     }
   }, [connected, subscribeToAllMarkets]);
 
-  // Symbol seçildiğinde history çek
+  // Fetch history when symbol is selected
   useEffect(() => {
     if (selectedSymbol && connected) {
       console.log(`📊 Fetching history for ${selectedSymbol}...`);
       
-      // 24 saatlik history çek (M1 interval)
+      // Fetch 24 hour history (M1 interval)
       const now = Date.now();
-      const dayAgo = now - (24 * 60 * 60 * 1000); // 24 saat öncesi
+      const dayAgo = now - (24 * 60 * 60 * 1000); // 24 hours ago
 
       queryHistory(
         selectedSymbol,
         dayAgo,
         now,
-        'M1', // 1 dakikalık mumlar
-        1440  // 24*60 = 1440 mum
+        'M1', // 1 minute candles
+        1440  // 24*60 = 1440 candles
       );
     }
   }, [selectedSymbol, connected, queryHistory]);

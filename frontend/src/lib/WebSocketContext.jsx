@@ -303,10 +303,10 @@ export function WebSocketProvider({ children }) {
         }
         
         if (orders && !isError) {
-          // Tüm order history'yi sakla
+          // Store all order history
           setAllOrderHistory(orders);
           
-          // Pagination metadata'yı güncelle
+          // Update pagination metadata
           setOrderHistoryMeta(prev => ({
             ...prev,
             totalCount: count
@@ -504,24 +504,24 @@ export function WebSocketProvider({ children }) {
     }
   }, []);
 
-  // Tüm order history'yi çek
+  // Fetch all order history
   const getOrderHistory = useCallback(() => {
     if (wsClientRef.current) {
-      wsClientRef.current.getOrderHistory(1000, 0); // Büyük limit ile hepsini çek
+      wsClientRef.current.getOrderHistory(1000, 0); // Fetch all with large limit
     }
   }, []);
 
-  // Frontend'de sayfa değiştir
+  // Change page in frontend
   const loadOrderHistoryPage = useCallback((page) => {
     setOrderHistoryMeta(prev => ({ ...prev, currentPage: page }));
   }, []);
 
-  // Sayfa boyutunu değiştir
+  // Change page size
   const changePageSize = useCallback((newPageSize) => {
     setOrderHistoryMeta(prev => ({ ...prev, pageSize: newPageSize, currentPage: 1 }));
   }, []);
 
-  // Mevcut sayfa için order'ları hesapla
+  // Calculate orders for current page
   const getCurrentPageOrders = useCallback(() => {
     const { currentPage, pageSize } = orderHistoryMeta;
     const startIndex = (currentPage - 1) * pageSize;

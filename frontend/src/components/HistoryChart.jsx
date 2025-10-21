@@ -83,14 +83,14 @@ export default function TradingViewChart({ symbol = "BTC-USD", livePrice, histor
     setTrigger(prev => prev + 1);
   }, [symbol]);
 
-  // Sadece gerçek WebSocket livePrice'ı kullan
+  // Only use real WebSocket livePrice
   useEffect(() => {
-    // Sadece gerçek livePrice varsa chart'ı güncelle
+    // Update chart only if real livePrice exists
     if (typeof livePrice === "number") {
       const now = Date.now();
       const raw = [...baseDataRef.current];
       
-      // Eğer hiç data yoksa, yeni bir mum başlat
+      // If no data, start new candle
       if (raw.length === 0) {
         baseDataRef.current = [{
           ts: now,
@@ -105,7 +105,7 @@ export default function TradingViewChart({ symbol = "BTC-USD", livePrice, histor
       
       const last = raw[raw.length - 1];
 
-      // Aynı saniye içindeyse mevcut mumu güncelle
+      // Update current candle if within same second
       if (last && Math.floor(last.ts / 1000) === Math.floor(now / 1000)) {
         raw[raw.length - 1] = {
           ...last,
@@ -287,7 +287,7 @@ export default function TradingViewChart({ symbol = "BTC-USD", livePrice, histor
 
   const priceColor = priceDelta >= 0 ? "text-green-400" : "text-red-400";
 
-  // History data istatistikleri - detaylı
+  // History data statistics - detailed
   const historyStats = useMemo(() => {
     if (!historyData || !Array.isArray(historyData) || historyData.length === 0) {
       return null;
