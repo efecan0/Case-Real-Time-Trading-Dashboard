@@ -231,17 +231,17 @@ bool AdvancedTradingServer::initialize() {
                     identity.clientId = userId;
                     identity.deviceId = deviceIdInt;
                     
-                    // Handle session token exactly like in hayadasoft.cpp
+                    // Handle session token processing
                     std::string processedSessionToken;
                     if (sessionToken.empty() || sessionToken.size() != 32) {
                         // Generate new session token if not provided or invalid
                         std::cout << "[Trading Handshake] Generating new session token" << std::endl;
                         identity.sessionToken = generateSessionToken(userId, deviceId);
                     } else {
-                        // Convert hex string to byte array (exactly like in hayadasoft.cpp)
+                        // Convert hex string to byte array
                         std::cout << "[Trading Handshake] Using provided session token: " << sessionToken.substr(0, 8) << "..." << std::endl;
                         std::string hexToken = sessionToken;
-                        processedSessionToken.clear(); // Like in hayadasoft.cpp line 359
+                        processedSessionToken.clear();
                         for (size_t i = 0; i < hexToken.length(); i += 2) {
                             std::string byteString = hexToken.substr(i, 2);
                             char byte = static_cast<char>(std::stoi(byteString, nullptr, 16));
@@ -527,10 +527,10 @@ void AdvancedTradingServer::setupMiddleware(binaryrpc::FrameworkAPI& api) {
 }
 
 void AdvancedTradingServer::setupHandlers(binaryrpc::FrameworkAPI& api) {
-    // Using shared FrameworkAPI reference from initialize() - hayadasoft pattern
+    // Using shared FrameworkAPI reference from initialize()
     std::cout << "[setupHandlers] Using shared FrameworkAPI reference" << std::endl;
     
-    // Authentication handlers - capture api by reference like hayadasoft
+    // Authentication handlers - capture api by reference
     app_->registerRPC("hello", [this, &api](const std::vector<uint8_t>& data, binaryrpc::RpcContext& context) {
         handleHello(data, context, api);
     });
@@ -539,7 +539,7 @@ void AdvancedTradingServer::setupHandlers(binaryrpc::FrameworkAPI& api) {
         handleLogout(data, context, api);
     });
     
-    // Order management handlers (QoS1 - AtLeastOnce) - using hayadasoft pattern
+    // Order management handlers (QoS1 - AtLeastOnce)
     std::cout << "[setupHandlers] Registering orders.place handler..." << std::endl;
     app_->registerRPC("orders.place", [this, &api](const std::vector<uint8_t>& data, binaryrpc::RpcContext& context) {
         std::cout << "[RPC Handler] orders.place called directly!" << std::endl;
@@ -559,7 +559,7 @@ void AdvancedTradingServer::setupHandlers(binaryrpc::FrameworkAPI& api) {
         handleOrdersHistory(data, context, api);
     });
     
-    // Market data handlers with room management - using hayadasoft pattern
+    // Market data handlers with room management
     app_->registerRPC("market.subscribe", [this, &api](const std::vector<uint8_t>& data, binaryrpc::RpcContext& context) {
         handleMarketDataSubscribe(data, context, api);
     });
@@ -572,7 +572,7 @@ void AdvancedTradingServer::setupHandlers(binaryrpc::FrameworkAPI& api) {
         handleMarketDataList(data, context, api);
     });
     
-    // History handlers - using hayadasoft pattern
+    // History handlers
     app_->registerRPC("history.query", [this, &api](const std::vector<uint8_t>& data, binaryrpc::RpcContext& context) {
         std::cout << "[RPC Handler] history.query called directly!" << std::endl;
         handleHistoryQuery(data, context, api);
@@ -583,7 +583,7 @@ void AdvancedTradingServer::setupHandlers(binaryrpc::FrameworkAPI& api) {
         handleHistoryLatest(data, context, api);
     });
     
-    // System management handlers - using hayadasoft pattern
+    // System management handlers
     app_->registerRPC("metrics.get", [this, &api](const std::vector<uint8_t>& data, binaryrpc::RpcContext& context) {
         handleMetricsGet(data, context, api);
     });
@@ -701,7 +701,7 @@ void AdvancedTradingServer::handleHello(const std::vector<uint8_t>& data, binary
         auto verifyAuth = sessionManager.getField<std::string>(sessionId, "authenticated");
         std::cout << "[Hello] Verification - authenticated field: " << (verifyAuth ? *verifyAuth : "NOT FOUND") << std::endl;
         
-        // Get session token from IHandshakeInspector like in hayadasoft.cpp
+        // Get session token from IHandshakeInspector
         std::string sessionToken;
         uint64_t sessionExpiryMs = 0;
         try {
@@ -804,7 +804,7 @@ void AdvancedTradingServer::handleOrdersPlace(const std::vector<uint8_t>& data, 
         std::cout << "[Handler] Processing order placement" << std::endl;
         std::cout << "[Handler] Received data size: " << data.size() << " bytes" << std::endl;
         
-        // Rate limiting in handler (following hayadasoft pattern - setField in handler)
+        // Rate limiting in handler (setField in handler)
         std::string sessionId = context.session().id();
         std::cout << "[Handler] Rate limiting check for session: " << sessionId << std::endl;
         
@@ -868,8 +868,8 @@ void AdvancedTradingServer::handleOrdersPlace(const std::vector<uint8_t>& data, 
                 auto& sessionManager = app_->getSessionManager();
                 std::cout << "[Handler] SessionManager reference obtained successfully" << std::endl;
                 
-                // Test with hayadasoft exact pattern first
-                std::cout << "[Handler] Testing setField with hayadasoft pattern..." << std::endl;
+                // Test setField pattern
+                std::cout << "[Handler] Testing setField pattern..." << std::endl;
                 
                 // Test getField first to verify SessionManager access
                 std::cout << "[Handler] Testing getField to verify SessionManager..." << std::endl;
@@ -1473,11 +1473,11 @@ void AdvancedTradingServer::handleMarketDataSubscribe(const std::vector<uint8_t>
             }
         }
         
-        // Store subscription info in session state (using hayadasoft.cpp method)
-        std::cout << "[Subscribe] About to store session data using hayadasoft.cpp method" << std::endl;
+        // Store subscription info in session state
+        std::cout << "[Subscribe] About to store session data" << std::endl;
         
         try {
-            // Use hayadasoft.cpp method: create shared_ptr and dereference it
+            // Create shared_ptr and dereference it
             auto subscribedRoomsPtr = std::make_shared<std::vector<std::string>>(subscribedRooms);
             
             // Direct setField call using SessionManager
